@@ -1,0 +1,22 @@
+# Build
+*.apk
+*.aab
+*.ap_
+*.dex
+build/
+/app/build/
+
+# Gradle
+.gradle/
+local.properties
+
+# IDE
+.idea/
+*.iml
+
+# Firebase
+google-services.json
+
+# OS
+.DS_Store
+Thumbs.db

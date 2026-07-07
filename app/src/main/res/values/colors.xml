@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg_dark">#FF121218</color>
+    <color name="card_bg">#FF1C1C28</color>
+    <color name="gold">#FFFFD700</color>
+    <color name="gold_dim">#33FFD700</color>
+    <color name="text_primary">#FFEEEEEE</color>
+    <color name="text_secondary">#FFBBBBBB</color>
+    <color name="text_muted">#FF777777</color>
+    <color name="divider">#22FFFFFF</color>
+    <color name="status_green">#FF00E676</color>
+    <color name="accent_blue">#FF448AFF</color>
+</resources>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Allow cleartext HTTP to Blizzard patch servers (port 1119) -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">us.patch.battle.net</domain>
+        <domain includeSubdomains="true">eu.patch.battle.net</domain>
+        <domain includeSubdomains="true">cn.patch.battle.net</domain>
+        <domain includeSubdomains="true">kr.patch.battle.net</domain>
+        <domain includeSubdomains="true">tw.patch.battle.net</domain>
+        <domain includeSubdomains="true">sg.patch.battle.net</domain>
+        <domain includeSubdomains="true">patch.battle.net</domain>
+    </domain-config>
+</network-security-config>

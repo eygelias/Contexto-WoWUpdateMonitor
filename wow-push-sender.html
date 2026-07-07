@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WoW Push Sender</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui;background:#121218;color:#eee;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:16px}
+h1{color:#ffd700;font-size:1.3em;margin-bottom:16px}
+.card{background:#1c1c28;border:1px solid #33ffd7000;border-radius:16px;padding:16px 19px;width:100%;max-width:423px;overflow:hidden}
+label{color:#ffd700;font-size:.8em;font-weight:700;display:block;margin-bottom:4px;margin-top:10px}
+label:first-child{margin-top:0}
+input,textarea{width:100%;background:#121218;border:1px solid #33ffd7000;color:#eee;padding:10px;border-radius:10px;font-size:1em;outline:none}
+input:focus,textarea:focus{border-color:#ffd700}
+textarea{height:70px;resize:vertical}
+.emoji-toggle{background:#121218;border:1px solid #33ffd7000;color:#ffd700;padding:8px 12px;border-radius:10px;width:100%;font-size:.9em;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px}
+.emoji-panel{display:none;background:#121218;border:1px solid #33ffd7000;border-radius:10px;margin-top:4px;overflow:hidden}
+.emoji-panel.open{display:block}
+.emoji-search{width:100%;padding:8px 10px;background:#1a1a24;border:none;border-bottom:1px solid #33ffd7000;color:#eee;font-size:.9em;outline:none}
+.emoji-cats{display:flex;overflow-x:auto;gap:0;padding:4px 6px;border-bottom:1px solid #222;scrollbar-width:none}
+.emoji-cats::-webkit-scrollbar{display:none}
+.emoji-cats button{background:none;border:none;font-size:1.2em;padding:4px 6px;cursor:pointer;border-radius:6px;flex-shrink:0;opacity:.6}
+.emoji-cats button.active{opacity:1;background:#33ffd7000}
+.emoji-cats button:active{transform:scale(.9)}
+.emoji-tray{max-height:200px;overflow-y:auto;overflow-x:hidden;padding:6px;display:flex;flex-wrap:wrap;gap:2px;word-break:break-all}
+.emoji-tray span{font-size:1.5em;cursor:pointer;padding:4px;border-radius:6px;line-height:1.2}
+.emoji-tray span:active{background:#33ffd7000;transform:scale(1.3)}
+.no-r{color:#555;font-size:.75em;padding:10px;width:100%;text-align:center}
+.btn{width:100%;padding:14px;background:#ffd700;color:#121218;font-size:1em;font-weight:700;border:none;border-radius:12px;margin-top:14px;cursor:pointer}
+.btn:active{transform:scale(.97);opacity:.85}
+.btn:disabled{opacity:.4}
+.log{margin-top:10px;font-size:.8em;color:#777;min-height:18px}
+.sent{background:#121218;border:1px solid #33ffd7000;border-radius:10px;padding:10px;margin-top:12px;max-height:180px;overflow-y:auto}
+.si{padding:5px 0;border-bottom:1px solid #222;font-size:.82em}
+.si:last-child{border:none}
+.st{color:#ffd700;font-weight:700}
+.tm{color:#555;font-size:.7em}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-thumb{background:#333;border-radius:4px}
+</style>
+</head>
+<body>
+<h1>⚔️ WoW Push Sender</h1>
+<div class="card">
+  <label>Título</label>
+  <input id="ti" maxlength="100">
+  <label>Mensaje</label>
+  <textarea id="bo" maxlength="500"></textarea>
+  <label>Emojis</label>
+  <button class="emoji-toggle" id="et" onclick="tog()">😀 Abrir emojis</button>
+  <div class="emoji-panel" id="ep">
+    <input class="emoji-search" id="es" placeholder="Buscar emoji..." oninput="fil()">
+    <div class="emoji-cats" id="ec"></div>
+    <div class="emoji-tray" id="et2"></div>
+  </div>
+  <button class="btn" onclick="snd()">📤 Enviar</button>
+  <div class="log" id="lg"></div>
+</div>
+<div class="card" style="margin-top:12px">
+  <label>Actualizar WoWUpdateMonitor</label>
+  <button class="btn" onclick="readVer()">🔎 Leer versión GitHub</button>
+  <div class="log" id="uv">Sin leer</div>
+  <button class="btn" onclick="notifyVer()">📢 Avisar nueva versión</button>
+</div>
+<div class="card" style="margin-top:12px">
+  <label>Historial envíos</label>
+  <div class="sent" id="sn"></div>
+</div>
+<script>
+const BASE='https://orange-meadow-c3f6.eygelias.workers.dev';
+const U=BASE+'/test-fcm';
+const $=s=>document.getElementById(s);
+let S=JSON.parse(localStorage.getItem('s')||'[]'),cc='all';
+
+const C=[
+{id:'all',i:'⭐'},
+{id:'smi',i:'😀'},
+{id:'ges',i:'👋'},
+{id:'peo',i:'👤'},
+{id:'ani',i:'🐻'},
+{id:'foo',i:'🍕'},
+{id:'tra',i:'✈️'},
+{id:'obj',i:'💡'},
+{id:'sym',i:'❤️'},
+{id:'wow',i:'⚔️'}
+];
+
+const E={
+smi:['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','😉','😊','😇','🥰','😍','🤩','😘','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😏','😒','🙄','😬','😌','😔','😪','😴','😷','🤒','🤕','🤢','🤮','🥵','🥶','🥴','😵','🤯','🤠','🥳','😎','🤓','😕','😟','🙁','😮','😲','😳','🥺','😦','😨','😰','😥','😢','😭','😱','😤','😡','😠','🤬','😈','👿','💀','💩','🤡','👹','👺','👻','👽','🤖','😺','😸','😻','🙀','😿','🙈','🙉','🙊'],
+ges:['👋','🤚','🖐️','✋','🖖','👌','🤌','🤏','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','🖕','👇','☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✍️','💅','💪'],
+peo:['👶','🧒','👦','👧','🧑','👨','👩','🧓','👴','👵','🙍','🙎','🙅','🙆','💁','🙋','🧏','🙇','🤦','🤷','💆','💇','🚶','🏃','💃','🤺','🧗','🤸','🧘','🛀','🛌','👫','👬','👭','💏','💑','👪','🗣️','👤','👥'],
+ani:['🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔','🐧','🐦','🦅','🦆','🦉','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🕷️','🐢','🐍','🦎','🐙','🦑','🦀','🐟','🐬','🐳','🐋','🦈','🐘','🐪','🦒','🐱','🐶','🐾','🐉'],
+foo:['🍕','🍔','🍟','🌭','🍿','🥓','🥚','🍳','🧇','🥞','🍞','🥐','🧀','🥗','🥪','🌮','🌯','🥘','🍲','🍝','🍜','🍣','🍱','🥟','🍤','🍙','🍚','🍧','🍨','🍦','🥧','🧁','🍰','🎂','🍮','🍭','🍬','🍫','🍩','🍪','🥛','☕','🍵','🥤','🍺','🍻','🥂','🍷','🥃','🍸','🍹'],
+tra:['✈️','🚀','🛸','🚁','⛵','🚢','🚂','🚄','🚅','🚇','🚈','🚌','🚐','🚑','🚒','🚓','🚔','🚕','🚗','🚙','🚚','🚛','🚜','🏍️','🛵','🚲','🛴','🛹','⛽','🚨','🚥','🚦','🏰','🏯','🏟️','🗼','🗽','⛪','🕌','⛩️','⛲','⛺','🌃','🌅','🌆','🌇','🌉'],
+obj:['💡','🔦','📱','💻','🖥️','⌨️','🖱️','💾','💿','🎮','🕹️','📷','📹','🎥','🎬','📺','📻','📡','🔋','🔌','💰','💎','🔑','🗝️','🔒','🔓','⚔️','🗡️','🔨','⛏️','🛠️','🔧','⚙️','🧰','💊','💉','🔬','🔭','📐','✂️','✏️','📝','📁','📅','📌','📎'],
+sym:['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❤️‍🔥','❣️','💕','💞','💓','💗','💖','💘','💝','💟','☮️','✝️','☪️','🕉️','☸️','✡️','☯️','☦️','🛐','♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓','⚛️','☢️','☣️','💯','💢','♨️','❌','⭕','🛑','⛔','🚫','✅','🈯','💹','❇️','✳️','❎','🌐','💠','💤','🏧','♿','🅿️','🚹','🚺','♻️','🔰','🔱','⚜️','〽️','⚠️','🚸','🔠','🔡','🔢','🔣','🔤','🅰️','🅱️','🆎','🆑','🅾️','🆘','🆔','🉑','㊙️','㊗️','🈴','🈵','🈹','🈲','🈶','🈚','🈸','🈺','🈷️','✴️','🆚','🉐','💮','0️⃣','1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟','#️⃣','*️⃣','▶️','⏸️','⏯️','⏹️','⏺️','⏭️','⏮️','⏩','⏪','⏫','⏬','◀️','🔼','🔽','➡️','⬅️','⬆️','⬇️','↗️','↙️','↖️','↘️','↕️','↔️','↪️','↩️','⤴️','⤵️','🔀','🔁','🔂','🔄','🔃','🎵','🎶','➕','➖','➗','✖️','💲','💱','™️','©️','®️','〰️','➰','➿','🔚','🔙','🔛','🔝','🔜','✔️','☑️','🔘','🔴','🟠','🟡','🟢','🔵','🟣','⚫','⚪','🟤','🔺','🔻','🔸','🔹','🔶','🔷','🔳','🔲','▪️','▫️','◾','◽','◼️','◻️'],
+wow:['⚔️','🔥','🐼','🎮','🖥️','💻','📱','🚨','✅','❌','⏩','⏪','📡','📌','🔄','🧪','🎯','💀','⚡','🏰','🛡️','🗡️','🏹','👑','💎','🪙','💰','🏆','🎖️','🥇','🥈','🥉','🏅','⭐','🌟','✨','💫','🔮','🧝','🧛','🧙','🧟','🧚','🧜','🦸','🦹','🐉']
+};
+
+const ALL=Object.values(E).flat();
+
+C.forEach(c=>{
+  const b=document.createElement('button');
+  b.textContent=c.i;b.dataset.c=c.id;b.className=c.id==='all'?'active':'';
+  b.onclick=()=>{cc=c.id;$('es').value='';document.querySelectorAll('.emoji-cats button').forEach(x=>x.className=x.dataset.c===cc?'active':'');const l=cc==='all'?ALL:(E[cc]||ALL);ren(l);$('et2').scrollTop=0};
+  $('ec').appendChild(b);
+});
+
+ren(ALL);rS();
+
+function fil(){
+  const q=$('es').value.toLowerCase().trim();
+  let l=cc==='all'?ALL:E[cc]||ALL;
+  if(q){const m={'fuego':'🔥','corazon':'❤️','estrella':'⭐','panda':'🐼','espada':'⚔️','mierda':'💩','risa':'😂','llorar':'😭','enojado':'😡','feliz':'😀','triste':'😢','amor':'❤️','like':'👍','ok':'👌','paz':'✌️','sol':'☀️','luna':'🌙','cohete':'🚀','musica':'🎵','juego':'🎮','computadora':'💻','ojo':'👁️','mano':'👋','palmas':'👏','fuerza':'💪','corona':'👑','pez':'🐟','gato':'🐱','perro':'🐶','leon':'🦁','tigre':'🐯','oso':'🐻','pizza':'🍕','cerveza':'🍺','cafe':'☕','wow':'⚔️','dragon':'🐉','calavera':'💀','fantasma':'👻','alien':'👽','check':'✅','cruz':'❌','flecha':'➡️','alerta':'🚨','trofeo':'🏆'};if(m[q])l=[m[q]]}
+  ren(l);
+}
+
+function ren(list){const t=$('et2');if(!list.length){t.innerHTML='<div class="no-r">Sin resultados</div>';return}t.innerHTML=list.map(e=>'<span>'+e+'</span>').join('');t.querySelectorAll('span').forEach(s=>{s.onclick=()=>{const ta=$('bo'),p=ta.selectionStart;ta.value=ta.value.slice(0,p)+s.textContent+ta.value.slice(p);ta.focus();ta.selectionStart=ta.selectionEnd=p+s.textContent.length}})}
+
+function tog(){const p=$('ep');p.classList.toggle('open');$('et').textContent=p.classList.contains('open')?'😀 Cerrar emojis':'😀 Abrir emojis';if(p.classList.contains('open'))$('es').focus()}
+
+async function snd(){
+  const t=$('ti').value.trim(),b=$('bo').value.trim();if(!t&&!b)return;
+  $('lg').textContent='Enviando...';document.querySelector('.btn').disabled=true;
+  try{const r=await fetch(U+'?title='+encodeURIComponent(t)+'&body='+encodeURIComponent(b));const d=await r.json();
+  if(d.ok&&d.sent>0){$('lg').textContent='✅ Enviado a '+d.sent+' dispositivo(s)';S.unshift({t,b,tm:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit',second:'2-digit'})});if(S.length>20)S.length=20;localStorage.setItem('s',JSON.stringify(S));rS();$('ti').value='';$('bo').value=''}
+  else $('lg').textContent='❌ '+JSON.stringify(d)}catch(e){$('lg').textContent='❌ '+e.message}
+  document.querySelector('.btn').disabled=false;
+}
+
+async function readVer(){
+  $('uv').textContent='Leyendo GitHub...';
+  try{const v=await (await fetch(BASE+'/app-version')).json();
+    $('uv').textContent=(v.appName||'WoWUpdateMonitor')+' '+v.versionName+' — '+(v.apkName||'APK');
+  }catch(e){$('uv').textContent='❌ '+e.message}
+}
+
+async function notifyVer(){
+  $('uv').textContent='Enviando aviso...';
+  try{const d=await (await fetch(BASE+'/notify-app-update')).json();
+    if(d.ok){$('uv').textContent='✅ Aviso enviado a '+(d.fcm?.sent||0)+' dispositivo(s): '+d.version.appName+' '+d.version.versionName}
+    else $('uv').textContent='❌ '+JSON.stringify(d);
+  }catch(e){$('uv').textContent='❌ '+e.message}
+}
+
+function rS(){$('sn').innerHTML=S.length?S.map(s=>'<div class="si"><span class="st">'+X(s.t)+'</span><br><span style="color:#aaa">'+X(s.b)+'</span><br><span class="tm">'+s.tm+'</span></div>').join(''):'<div style="color:#555;font-size:.75em">Sin envíos</div>'}
+function X(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')}
+</script>
+</body>
+</html>
